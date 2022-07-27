@@ -1,4 +1,4 @@
-Print("Gay hub has been activated.... can I get a uwu in the chat??")
+print("Gay hub has been activated.... can I get a uwu in the chat??")
 
 --Gui
 local Exploit = Instance.new("ScreenGui")
