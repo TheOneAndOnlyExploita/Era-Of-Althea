@@ -578,15 +578,15 @@ UICorner_17.Parent = LoadingPercentageLabel
 --Ui Animations
 local TweenService = game:GetService("TweenService")
 
-local TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.New(1), {Size = UDim2.FromScale(.1, .195)})
+local TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.new(1), {Size = UDim2.new(.1, 0, .195, 0)})
 TweenBoxFrame:Play()
 
 TweenBoxFrame.Completed:Connect(function()
-	TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.New(1, Enum.EasingStyle.Linear), {Rotation = 90})
+	TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.new(1, Enum.EasingStyle.Linear), {Rotation = 90})
 	TweenBoxFrame:Play()
 
 	TweenBoxFrame.Completed:Connect(function()
-		TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.New(1, Enum.EasingStyle.Linear), {Size = UDim2.FromScale(0, 0), Rotation = 180})
+		TweenBoxFrame = TweenService:Create(BoxFrame, TweenInfo.new(1, Enum.EasingStyle.Linear), {Size = UDim2.FromScale(0, 0), Rotation = 180})
 		TweenBoxFrame:Play()
 
 		TweenBoxFrame.Completed:Connect(function()
@@ -595,7 +595,7 @@ TweenBoxFrame.Completed:Connect(function()
 	end)
 end)
 
-local TweenMainTitleLabel = TweenService:Create(MainTitleLabel, TweenInfo.New(1), {Size = UDim2.FromScale(.1, .1)})
+local TweenMainTitleLabel = TweenService:Create(MainTitleLabel, TweenInfo.new(1), {Size = UDim2.FromScale(.1, 0, .1, 0)})
 TweenMainTitleLabel:Play()
 
 for i = 1, 100 do
@@ -617,3 +617,83 @@ local function FindNearbyPlayer (Position)
 	end
 	return PlayerFound
 end
+
+--
+
+_G.Autofarm = false -- Toggle Autofarm
+
+local Player = game:GetService("Players").LocalPlayer
+local Character = Player.Character
+
+local EntitiesFolder = game:GetService("Workspace").NPCS
+local NpcToFarm = "Wolf" -- "Wolf" , "Fire Wolf", "G-Knight" -Examples
+
+--
+
+--Toggled Mechanics
+
+local function ToggleAutofarm ()
+	while _G.Autofarm do
+		local FoundEntity = nil
+		for _, Entity in ipairs(EntitiesFolder:GetDescendants()) do
+			if Entity:IsA("Model") and Entity.Name == NpcToFarm and Entity.Health.Value >= 100 and not FindNearbyPlayer(Entity.PrimaryPart.Position) then
+				FoundEntity = Entity
+			end
+		end
+
+		if FoundEntity then
+			repeat
+				game:GetService("Players").LocalPlayer.Character.Client.Events.LightAttack:FireServer("SecretCode") -- Auto Attack
+
+				local TweenHumanoidRootPart = game:GetService("TweenService"):Create(Character.HumanoidRootPart, TweenInfo.new(.1), {CFrame = FoundEntity.PrimaryPart.CFrame * CFrame.new(0, -3, 6)})
+				TweenHumanoidRootPart:Play()
+
+				wait(.1)
+			until FoundEntity.Health.Value <= 0 or not FoundEntity or not _G.Autofarm and not FindNearbyPlayer(FoundEntity.PrimaryPart.Position)
+		end
+
+		wait()
+
+		if not _G.Autofarm then break end
+	end
+end
+
+--Gui Drag
+
+local UserInputService = game:GetService("UserInputService")
+
+local Dragging
+local DragInput
+local DragStart
+local StartPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+gui.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = gui.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+gui.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
